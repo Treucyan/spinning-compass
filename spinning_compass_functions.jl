@@ -4,6 +4,7 @@
 
 
 
+
 #module for the equations of motions and rk4 algorithm
 module Spin_compass
 
@@ -85,13 +86,49 @@ end
 
 
 "
-    module_initializer()
-    
-    # Descrition
+module_initializer()
+
+# Descrition
     Prints Hello World!
 "
 function module_initializer()
     println("Hello World")
 end
+
+end
+
+
+module Chaos_checking
+
+using FFTW
+
+#spectral entropy
+"spectral_entropy(observable)
+
+# Description
+Calculates the spectral entropy of a single observable. Note that the function has a dependency on the FFTW package
+as it uses the fft function to do a fast fourier transform.
+"
+function spectral_entropy(observable::Array)
+    fourier_observable = fftshift(fft(observable))
+    power_spectrum = abs.(fourier_observable).^2
+    normalized_power = (power_spectrum./ sum(power_spectrum)).*2
+
+    #calculating spectral entropy
+    H_spectral = 0
+    for probability in normalized_power
+        if probability > 1e-5
+            H_spectral += probability * log2(probability)
+        else
+            H_spectral += 0
+        end
+    end
+    H_spectral /= -2* log2(length(normalized_power))
+    return H_spectral
+end
+
+
+
+
 
 end

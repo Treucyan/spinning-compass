@@ -26,8 +26,6 @@ Equations of motion for a spinning compass in a periodically changing magnetic f
     [dxdt, dvdt] (Array): system's velocity state at t.
 "
 function EOM_compass(r::Array, t::Float64, B::Float64, ω::Float64)
-    
-    
     (x, v) = r
     dxdt = v
     dvdt = -B*cos(ω*t)*sin(x)
@@ -36,10 +34,36 @@ end
 
 
 
+# equations of motions for unitless spinning compass
+# time is in terms of the driving period T = ωt 
+# Use this for Poincare map 
+#(use T_f = 2πn for simulation time commensurate to the driving period)
+"
+EOM_compass_unitless(r, t, λ)
+
+#Description 
+Unitless equations of motions of the periodically-driven spinning compass
+
+# Args
+    r (Array): Array containing the compass' state at time t. `r` must have the form: `r = [x, v]`
+    t (Float64): time t. 
+    λ (Float64): unitless amplitude
+
+# Returns
+    [dxdt, dvdt] (Array): system's velocity state at t.
+"
+function EOM_compass_unitless(r::Array, t::Float64, λ::Float64)
+    (x, v) = r
+    dxdT = v
+    dvdT = -0.5 * (λ^2) * cos(t) * sin(x)
+    return [dxdT, dvdT]
+end
+
+
+
+
 # general Runge Kutta algorithm 
 # (Sugested Edit: generalize (xpoints, ypoints) to make the function applicable for multidimensional systems)
-
-
 "
 RK4(f, time_param, r)
 
@@ -96,6 +120,10 @@ function module_initializer()
 end
 
 end
+
+
+
+
 
 
 module Chaos_checking

@@ -100,10 +100,10 @@ function RK4(eom_func::Function, time_param::Tuple{Float64, Float64, Int64}, r::
         xpoints[i] = r[1]
         ypoints[i] = r[2]
         k1 = h*eom_func(r, t)
-        k2 = h*eom_func(r .+ 0.5*k1, t + 0.5*h)
-        k3 = h*eom_func(r .+ 0.5*k2, t + 0.5*h)
+        k2 = h*eom_func(r .+ (0.5 .* k1), t + 0.5*h)
+        k3 = h*eom_func(r .+ (0.5 .* k2), t + 0.5*h)
         k4 = h*eom_func(r .+ k3, t + h)
-        r = r .+ (k1 + 2*k2 + 2*k3 + k4) / 6
+        r = r .+ (k1 + 2 .* k2 + 2 .* k3 + k4) / 6
     end
     return tpoints, xpoints, ypoints
 end
@@ -155,6 +155,43 @@ function spectral_entropy(observable::Array)
     return H_spectral
 end
 
+
+
+
+
+#Stroboscopic dynamics of observable
+"
+stroboscope_dynamics(observables, T_array, timestep)
+
+# Description
+Constructs the stroboscopic dynamics of a given set of observables, `observables = (xpoints, vpoints)`.
+
+## Args
+    xpoints (Array): full dynamics of the position variable
+    
+    vpoints (Array): full dynamics of the velocity variable
+
+    time_param (Tuple): time parameters for constructing the time array. Use the following
+        format: time_param = [t_initial, t_final, Nsteps]
+
+## Returns 
+    x_strobe, v_strobe (Vector): stroboscopic dynamics of xpoints and vpoints
+"
+function stroboscope_dynamics(xpoints::Array, vpoints::Array, time_param::Tuple{Float64, Float64, Int64})
+    (t_initial, t_final, Nsteps) = time_param
+    timestep = abs(t_final - t_initial) / Nsteps
+    T_array = range(t_initial, t_final, Nsteps)
+
+    x_strobe, v_strobe = [], []
+    @simd for i in 1:Nsteps
+        time_error = T_array[i] % 2π
+        if time_error <= timestep
+            append!(x_strobe, xpoints[i])
+            append!(v_strobe, vpoints[i])
+        end
+    end
+    return x_strobe, v_strobe
+end
 
 
 

@@ -139,19 +139,19 @@ as it uses the fft function to do a fast fourier transform.
 "
 function spectral_entropy(observable::Array)
     fourier_observable = fftshift(fft(observable))
-    power_spectrum = abs.(fourier_observable).^2
-    normalized_power = (power_spectrum./ sum(power_spectrum)).*2
+    power_spectrum = abs.(fourier_observable).^2 
+    normalized_power = power_spectrum./ sum(power_spectrum)
 
     #calculating spectral entropy
     H_spectral = 0
     for probability in normalized_power
-        if probability > 1e-5
+        if probability >= 1e-10
             H_spectral += probability * log2(probability)
         else
             H_spectral += 0
         end
     end
-    H_spectral /= -2* log2(length(normalized_power))
+    H_spectral /= -1 * log2( length(normalized_power))
     return H_spectral
 end
 
@@ -192,6 +192,83 @@ function stroboscope_dynamics(xpoints::Array, vpoints::Array, time_param::Tuple{
     end
     return x_strobe, v_strobe
 end
+
+
+
+
+end
+
+
+
+
+
+#moduel for constructing and saving phase diagrams
+module Phase_diagram
+using DelimitedFiles
+using ..Spin_compass
+using ..Chaos_checking
+
+
+"
+lambda_entropy_linear_scan(time_param, scan_param)
+
+# Description
+
+## Args
+
+## Returns
+
+"
+function lambda_entropy_linear_scan(time_param::Tuple, scan_param::Tuple)
+    #initializing constants
+    (lambda_initial, lambda_final, resolution) = scan_param
+
+    #scan Arrays
+    lambda_sample_array = range(lambda_initial, lambda_final, resolution)
+    spec_entropy_array = zeros(resolution)
+
+    println("Scan starting...")
+    for i in 1:resolution
+        #initializing dynamics inputs
+        λ = lambda_sample_array[i]
+        x0, v0 = 1.0, 0.0
+        r = [x0, v0]
+        f(r, t) = Spin_compass.EOM_compass_unitless(r, t, λ)
+
+        (tpoints, xpoints, vpoints) = Spin_compass.RK4(f, time_param, r)
+
+        cartesian_proj = cos.(xpoints)
+        entropy = Chaos_checking.spectral_entropy(cartesian_proj)
+
+        spec_entropy_array[i] = entropy
+
+        if i % 10 == 0
+            println("Number of Rows Done: ", i)
+            println("Number of Rows Remaining: ", resolution - i)
+        end
+    end
+
+    println("Scan completed!")
+
+    return spec_entropy_array
+end
+
+"
+lambda_linear_scan_saver(time_param, scan_param, save_filename)
+
+# Description
+
+## Args
+
+## Returns
+
+"
+function lambda_linear_scan_saver(time_param::Tuple, scan_param::Tuple, save_filename::String)
+    spec_entropy_array = Phase_diagram.lambda_entropy_linear_scan(time_param, scan_param)
+    writedlm(save_filename, spec_entropy_array)
+end
+
+
 
 
 

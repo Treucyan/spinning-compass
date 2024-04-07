@@ -294,13 +294,22 @@ end
 
 #function for constructing the normalized power as a function of lambda
 "
+normalized_power_linear_scan(time_param, scan_param)
 
 # Description
-creates a scan
+Generates a linear scan of lambda to obtain the behavior of the normalized power spectrum
+of the spin compass as a function of lambda.
 
 ## Args
+    time_param (Tuple{Float64, Float64, Int64}): initial and final time, and number of steps of the integration. 
+        `time_param` must follow the format: `time_param = [t_initial, t_final, Npoints]`
+
+    scan_param (Tuple{Float64, Float64, Int64}): range of lambda to be considered and the resolution of the scan.
+        `scan_param` must follow the format: 'scan_param = [t_initial, t_final, resolution]'
 
 ## Returns
+    freq_spectrum (Array): angular frequency axis of the power spectrum
+    normalized_power_fullarray (Array): 2x2 matrix of the normalized power spectrum as a function of lambda
 
 "
 function normalized_power_linear_scan(time_param::Tuple{Float64, Float64, Int64}, scan_param::Tuple{Float64, Float64, Int64})
@@ -355,9 +364,23 @@ end
 
 
 "
+normalized_power_scan_saver(time_param, scan_param, freq_filename, normalized_power_filename)
+
 # Description
+Generates and saves the normalized power spectrum array generated from the linear scan of lambda into a txt file. Note that
+the function uses the function `writedlm()` under the package `DelimitedFiles`.
 
 ## Args
+    time_param (Tuple{Float64, Float64, Int64}): initial and final time, and number of steps of the integration. 
+        `time_param` must follow the format: `time_param = [t_initial, t_final, Npoints]`   
+
+    scan_param (Tuple{Float64, Float64, Int64}): range of lambda to be considered and the resolution of the scan.
+        `scan_param` must follow the format: 'scan_param = [t_initial, t_final, resolution]'
+
+    freq_filename (String): filename of the txt file where the frequency spectrum array will be saved
+
+    normalized_power_filename (String): filename of the txt file where the power spectrum array will be saved
+
 
 ## Returns
 

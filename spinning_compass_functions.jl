@@ -205,6 +205,7 @@ end
 #moduel for constructing and saving phase diagrams
 module Phase_diagram
 using DelimitedFiles
+using FFTW
 using ..Spin_compass
 using ..Chaos_checking
 
@@ -244,8 +245,12 @@ function lambda_entropy_linear_scan(time_param::Tuple{Float64, Float64, Int64}, 
 
         (tpoints, xpoints, vpoints) = Spin_compass.RK4(f, time_param, r)
 
-        cartesian_proj = cos.(xpoints)
-        entropy = Chaos_checking.spectral_entropy(cartesian_proj)
+        #bounding phi
+        cartesian_proj_x = cos.(xpoints)
+        cartesian_proj_y = sin.(xpoints)
+        xpoints = atan.(cartesian_proj_y, cartesian_proj_x) # we do this to force phi to be periodic around -pi and pi
+
+        entropy = Chaos_checking.spectral_entropy(xpoints)
 
         spec_entropy_array[i] = entropy
 
@@ -280,13 +285,88 @@ the function uses the function `writedlm()` under the package `DelimitedFiles`.
     A txt file containing the spectral entropy array for the given range of lambda set by `scan_param`
 
 "
-function lambda_linear_scan_saver(time_param::Tuple{Float64, Float64, Int64}, scan_param::TupleTuple{Float64, Float64, Int64}, save_filename::String)
+function lambda_linear_scan_saver(time_param::Tuple{Float64, Float64, Int64}, scan_param::Tuple{Float64, Float64, Int64}, save_filename::String)
     spec_entropy_array = Phase_diagram.lambda_entropy_linear_scan(time_param, scan_param)
     writedlm(save_filename, spec_entropy_array)
 end
 
 
 
+#function for constructing the normalized power as a function of lambda
+"
+
+# Description
+creates a scan
+
+## Args
+
+## Returns
+
+"
+function normalized_power_linear_scan(time_param::Tuple{Float64, Float64, Int64}, scan_param::Tuple{Float64, Float64, Int64})
+    #initializing constants
+    (t_initial, t_final, Nsteps) = time_param
+    (lambda_initial, lambda_final, resolution) = scan_param
+    sampling_rate = Nsteps / abs(t_final - t_initial)
+
+
+
+    #scan Arrays
+    lambda_sample_array = range(lambda_initial, lambda_final, resolution)
+    normalized_power_fullarray = zeros((Nsteps, resolution))
+    freq_spectrum = fftshift(fftfreq(Nsteps, sampling_rate)) * 2π
+
+
+    println("Scan starting...")
+    for i in 1:resolution
+        #initializing dynamics inputs
+        λ = lambda_sample_array[i]
+        x0, v0 = 1.0, 0.0
+        r = [x0, v0]
+        f(r, t) = Spin_compass.EOM_compass_unitless(r, t, λ)
+
+        (tpoints, xpoints, vpoints) = Spin_compass.RK4(f, time_param, r)
+
+        #calculating the frequency spectrum
+        #bounding phi
+        cartesian_proj_x = cos.(xpoints)
+        cartesian_proj_y = sin.(xpoints)
+        xpoints = atan.(cartesian_proj_y, cartesian_proj_x) # we do this to force phi to be periodic around -pi and pi
+
+        fourier_xpoints = fftshift(fft(xpoints))
+        power_spectrum = abs.(fourier_xpoints).^2
+        normalized_power = power_spectrum./ sum(power_spectrum)
+
+        normalized_power_fullarray[:, i] = normalized_power
+
+
+        #for code progress tracking
+        if i % 10 == 0
+            println("Number of Rows Done: ", i)
+            println("Number of Rows Remaining: ", resolution - i)
+        end
+    end
+
+
+    println("Scan completed!")
+
+    return freq_spectrum, normalized_power_fullarray
+end
+
+
+"
+# Description
+
+## Args
+
+## Returns
+
+"
+function normalized_power_scan_saver(time_param::Tuple{Float64, Float64, Int64}, scan_param::Tuple{Float64, Float64, Int64}, freq_spectrum_filename::String, normalized_power_filename::String)
+    freq_spectrum, normalized_power = normalized_power_linear_scan(time_param, scan_param)
+    writedlm(freq_spectrum_filename, freq_spectrum)
+    writedlm(normalized_power_filename, normalized_power)
+end
 
 
 

@@ -213,13 +213,20 @@ using ..Chaos_checking
 lambda_entropy_linear_scan(time_param, scan_param)
 
 # Description
+Generates a linear scan of lambda for the unitless spin compass, calculating the 
+spectral entropy at each value of lambda.
 
 ## Args
+    time_param (Tuple{Float64, Float64, Int64}): initial and final time, and number of steps of the integration. 
+        `time_param` must follow the format: `time_param = [t_initial, t_final, Npoints]`
+
+    scan_param (Tuple{Float64, Float64, Int64}): range of lambda to be considered and the resolution of the scan.
+        `scan_param` must follow the format: 'scan_param = [t_initial, t_final, resolution]'
 
 ## Returns
-
+    spec_entropy_array (Array): spectral entropy as a function of lambda for the given range set by `scan_param`
 "
-function lambda_entropy_linear_scan(time_param::Tuple, scan_param::Tuple)
+function lambda_entropy_linear_scan(time_param::Tuple{Float64, Float64, Int64}, scan_param::Tuple{Float64, Float64, Int64})
     #initializing constants
     (lambda_initial, lambda_final, resolution) = scan_param
 
@@ -257,13 +264,23 @@ end
 lambda_linear_scan_saver(time_param, scan_param, save_filename)
 
 # Description
+Generates and saves the spectral entropy array generated from the linear scan of lambda into a txt file. Note that
+the function uses the function `writedlm()` under the package `DelimitedFiles`.
 
 ## Args
+    time_param (Tuple{Float64, Float64, Int64}): initial and final time, and number of steps of the integration. 
+        `time_param` must follow the format: `time_param = [t_initial, t_final, Npoints]`
+
+    scan_param (Tuple{Float64, Float64, Int64}): range of lambda to be considered and the resolution of the scan.
+        `scan_param` must follow the format: 'scan_param = [t_initial, t_final, resolution]'
+
+    save_filename (String): filename of the txt where the spectral entroy array will be saved
 
 ## Returns
+    A txt file containing the spectral entropy array for the given range of lambda set by `scan_param`
 
 "
-function lambda_linear_scan_saver(time_param::Tuple, scan_param::Tuple, save_filename::String)
+function lambda_linear_scan_saver(time_param::Tuple{Float64, Float64, Int64}, scan_param::TupleTuple{Float64, Float64, Int64}, save_filename::String)
     spec_entropy_array = Phase_diagram.lambda_entropy_linear_scan(time_param, scan_param)
     writedlm(save_filename, spec_entropy_array)
 end

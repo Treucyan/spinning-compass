@@ -222,7 +222,7 @@ spectral entropy at each value of lambda.
         `time_param` must follow the format: `time_param = [t_initial, t_final, Npoints]`
 
     scan_param (Tuple{Float64, Float64, Int64}): range of lambda to be considered and the resolution of the scan.
-        `scan_param` must follow the format: 'scan_param = [t_initial, t_final, resolution]'
+        `scan_param` must follow the format: 'scan_param = [lambda_initial, lambda_final, resolution]'
 
 ## Returns
     spec_entropy_array (Array): spectral entropy as a function of lambda for the given range set by `scan_param`
@@ -265,6 +265,11 @@ function lambda_entropy_linear_scan(time_param::Tuple{Float64, Float64, Int64}, 
     return spec_entropy_array
 end
 
+
+
+
+
+
 "
 lambda_linear_scan_saver(time_param, scan_param, save_filename)
 
@@ -277,7 +282,7 @@ the function uses the function `writedlm()` under the package `DelimitedFiles`.
         `time_param` must follow the format: `time_param = [t_initial, t_final, Npoints]`
 
     scan_param (Tuple{Float64, Float64, Int64}): range of lambda to be considered and the resolution of the scan.
-        `scan_param` must follow the format: 'scan_param = [t_initial, t_final, resolution]'
+        `scan_param` must follow the format: 'scan_param = [lambda_initial, lambda_final, resolution]'
 
     save_filename (String): filename of the txt where the spectral entroy array will be saved
 
@@ -289,6 +294,10 @@ function lambda_linear_scan_saver(time_param::Tuple{Float64, Float64, Int64}, sc
     spec_entropy_array = Phase_diagram.lambda_entropy_linear_scan(time_param, scan_param)
     writedlm(save_filename, spec_entropy_array)
 end
+
+
+
+
 
 
 
@@ -305,7 +314,7 @@ of the spin compass as a function of lambda.
         `time_param` must follow the format: `time_param = [t_initial, t_final, Npoints]`
 
     scan_param (Tuple{Float64, Float64, Int64}): range of lambda to be considered and the resolution of the scan.
-        `scan_param` must follow the format: 'scan_param = [t_initial, t_final, resolution]'
+        `scan_param` must follow the format: 'scan_param = [lambda_initial, lambda_final, resolution]'
 
 ## Returns
     freq_spectrum (Array): angular frequency axis of the power spectrum
@@ -363,6 +372,9 @@ function normalized_power_linear_scan(time_param::Tuple{Float64, Float64, Int64}
 end
 
 
+
+
+
 "
 normalized_power_scan_saver(time_param, scan_param, freq_filename, normalized_power_filename)
 
@@ -375,14 +387,14 @@ the function uses the function `writedlm()` under the package `DelimitedFiles`.
         `time_param` must follow the format: `time_param = [t_initial, t_final, Npoints]`   
 
     scan_param (Tuple{Float64, Float64, Int64}): range of lambda to be considered and the resolution of the scan.
-        `scan_param` must follow the format: 'scan_param = [t_initial, t_final, resolution]'
+        `scan_param` must follow the format: 'scan_param = [lambda_initial, lambda_final, resolution]'
 
     freq_filename (String): filename of the txt file where the frequency spectrum array will be saved
 
     normalized_power_filename (String): filename of the txt file where the power spectrum array will be saved
 
-
 ## Returns
+    A txt file containing the power spectrum array for the given range of lambda set by `scan_param`
 
 "
 function normalized_power_scan_saver(time_param::Tuple{Float64, Float64, Int64}, scan_param::Tuple{Float64, Float64, Int64}, freq_spectrum_filename::String, normalized_power_filename::String)
@@ -390,6 +402,103 @@ function normalized_power_scan_saver(time_param::Tuple{Float64, Float64, Int64},
     writedlm(freq_spectrum_filename, freq_spectrum)
     writedlm(normalized_power_filename, normalized_power)
 end
+
+
+
+
+
+
+
+"
+b_omega_spectral_diagram_scanner(time_param, scan_param)
+
+# Description
+Generates a 2D array with size (resolution , resolution) containing the spectral entropy of the spin compass' 
+dynamics as a function of both B and ω for a given range set by the `scan_param` input.
+
+## Args
+    scan_param (Tuple{Float64, Float64, Float64, Float64, Int64}): range of lambda to be considered and the resolution of 
+        the scan. `scan_param` must follow the format: 
+        'scan_param = [B_initial, B_final, omega_initial, omega_final, resolution]'
+
+## Returns
+    spectral_entropy_diagram (Array): 2D array containing the spectral entropy as a function of B and ω
+"
+function b_omega_spectral_diagram_scanner(scan_param::Tuple{Float64, Float64, Float64, Float64, Int64})
+    (B_initial, B_final, omega_initial, omega_final, resolution) = scan_param
+
+    #initializing Arrays
+    magnetic_field_amp_array = range(B_initial, B_final, resolution)
+    driving_freq_array = range(omega_initial, omega_final, resolution)
+    spectral_entropy_diagram = zeros((resolution, resolution))
+
+
+    println("Scan starting...")
+    for i in 1:resolution
+        for j in 1:resolution
+            #initial states
+            x0, v0 = 1.0, 0.0
+            r = [x0, v0]
+            
+            B = magnetic_field_amp_array[i]
+            ω = driving_freq_array[j]
+
+            timestep = 0.01
+            t_initial, t_final = 0.0, 100 * 2π / ω
+            Nsteps = Int64(floor(abs(t_final - t_initial) / timestep))
+            time_param = (t_initial, t_final, Nsteps)
+
+            f(r, t) = Spin_compass.EOM_compass(r, t, B, ω)
+
+            (tpoints, xpoints, vpoints) = Spin_compass.RK4(f, time_param, r)
+
+            #bounding phi
+            cartesian_proj_x = cos.(xpoints)
+            cartesian_proj_y = sin.(xpoints)
+            xpoints = atan.(cartesian_proj_y, cartesian_proj_x) # we do this to force phi to be periodic around -pi and pi
+
+            entropy = Chaos_checking.spectral_entropy(xpoints)
+            
+            spectral_entropy_diagram[i, j] = entropy
+        end
+        if i % 10 == 0
+            println("Number of Rows Done: ", i)
+            println("Number of Rows Remaining: ", resolution - i)
+        end
+    end
+
+    println("Scan completed!")
+
+    return spectral_entropy_diagram
+end
+
+
+
+
+
+"
+b_omega_spectral_diagram_scan_saver()
+# Description
+Generates and saves the matrix containing the spectral entropy information as a function of B and ω information
+a txt file.
+
+## Args
+    scan_param (Tuple{Float64, Float64, Float64, Float64, Int64}): range of lambda to be considered and the resolution of 
+        the scan. `scan_param` must follow the format: 
+        'scan_param = [B_initial, B_final, omega_initial, omega_final, resolution]'
+
+    save_filename (String): filename of the txt file where the spectral entropy diagram will be saved
+
+
+## Returns
+    A txt file containing the spectral entropy diagram as a function of B and ω for the given range set by scan_param.
+
+"
+function b_omega_spectral_diagram_scan_saver(scan_param::Tuple{Float64, Float64, Float64, Float64, Int64}, save_filename::String)
+    spectral_entropy_diagram = Phase_diagram.b_omega_spectral_diagram_scanner(scan_param)
+    writedlm(save_filename, spectral_entropy_diagram)
+end
+
 
 
 

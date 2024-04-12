@@ -144,7 +144,7 @@ function spectral_entropy(observable::Array)
 
     #calculating spectral entropy
     H_spectral = 0
-    for probability in normalized_power
+    @simd for probability in normalized_power
         if probability >= 1e-10
             H_spectral += probability * log2(probability)
         else

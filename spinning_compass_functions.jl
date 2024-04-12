@@ -144,7 +144,7 @@ function spectral_entropy(observable::Array)
 
     #calculating spectral entropy
     H_spectral = 0
-    for probability in normalized_power
+    @simd for probability in normalized_power
         if probability >= 1e-10
             H_spectral += probability * log2(probability)
         else
@@ -434,8 +434,8 @@ function b_omega_spectral_diagram_scanner(scan_param::Tuple{Float64, Float64, Fl
 
 
     println("Scan starting...")
-    for i in 1:resolution
-        for j in 1:resolution
+    for j in 1:resolution
+        for i in 1:resolution
             #initial states
             x0, v0 = 1.0, 0.0
             r = [x0, v0]
@@ -461,9 +461,9 @@ function b_omega_spectral_diagram_scanner(scan_param::Tuple{Float64, Float64, Fl
             
             spectral_entropy_diagram[i, j] = entropy
         end
-        if i % 10 == 0
-            println("Number of Rows Done: ", i)
-            println("Number of Rows Remaining: ", resolution - i)
+        if j % 10 == 0
+            println("Number of Columns Done: ", j)
+            println("Number of Columns Remaining: ", resolution - j)
         end
     end
 

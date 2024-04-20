@@ -5,15 +5,15 @@
 
 
 
-#module for the equations of motions and rk4 algorithm
+# --------------------------------------------------
+#  Spin_compass
+# --------------------------------------------------
 module Spin_compass
 
-
-#equations of motions of the spinning compass
-"
+"""
 EOM_compass(r, t, B, ω)
 
-#Description
+# Description
 Equations of motion for a spinning compass in a periodically changing magnetic field
 
 # Args
@@ -24,7 +24,7 @@ Equations of motion for a spinning compass in a periodically changing magnetic f
 
 # Returns
     [dxdt, dvdt] (Array): system's velocity state at t.
-"
+"""
 function EOM_compass(r::Array, t::Float64, B::Float64, ω::Float64)
     (x, v) = r
     dxdt = v
@@ -33,25 +33,22 @@ function EOM_compass(r::Array, t::Float64, B::Float64, ω::Float64)
 end    
 
 
-
-# equations of motions for unitless spinning compass
-# time is in terms of the driving period T = ωt 
-# Use this for Poincare map 
-#(use T_f = 2πn for simulation time commensurate to the driving period)
-"
+"""
 EOM_compass_unitless(r, t, λ)
 
-#Description 
-Unitless equations of motions of the periodically-driven spinning compass
+# Description 
+Unitless equations of motions of the periodically-driven spinning compass. 
+
+The time variable is expressed in terms of the driving period `T = ωt``. For the simulation time to be commensurate with the driving period, set T_f = `2πn`
 
 # Args
     r (Array): Array containing the compass' state at time t. `r` must have the form: `r = [x, v]`
-    t (Float64): time t. 
+    t (Float64): time t
     λ (Float64): unitless amplitude
 
 # Returns
     [dxdt, dvdt] (Array): system's velocity state at t.
-"
+"""
 function EOM_compass_unitless(r::Array, t::Float64, λ::Float64)
     (x, v) = r
     dxdT = v
@@ -60,61 +57,54 @@ function EOM_compass_unitless(r::Array, t::Float64, λ::Float64)
 end
 
 
+"""
+    RK4(eom_func, t_param, r)
 
+Solve systems of first-order ordinary differential equations using the fourth-order Runge-Kutta method.
 
-# general Runge Kutta algorithm 
-# (Sugested Edit: generalize (xpoints, ypoints) to make the function applicable for multidimensional systems)
-"
-RK4(f, time_param, r)
+# Args
+- eom_func (Function): function corresponding to the equations of motion to be integrated. The function must follow the format: `eom_func(r, t)`.
 
-# Description
-Solve a system of two first-order ODEs using the fourth-order Runge-Kutta method.
+- time_param (Tuple): initial and final time, and number of steps of the integration. `time_param` must follow the format: `time_param = [t_initial, t_final, Npoints]`
 
-## Args 
-    eom_func (Function): function corresponding to the equations of motion to be integrated.
-        The function must follow the format: `eom_func(r, t)`.
+- r (Array): initial state of the system. r must follow the same ordering of variables used in `eom_func`.
 
-    time_param (Tuple): initial and final time, and number of steps of the integration. `time_param`
-        must follow the format: `time_param = [t_initial, t_final, Npoints]`
+# Returns
+- (tpoints, rpoints): Arrays containing the IVP solution of the EOM
 
-    r (Array): initial state of the system. r must follow the same ordering of variables used in `eom_func`.
+# Notes
+- Each row in rpoints contains the values of a particular dependent variable. To extract these values, one can either do
+`xpoints = rpoints[1, :], ypoints = rpoints[2, :], ...` or `xpoints, ypoints, ... = eachrow(rpoints).`
+"""
+function RK4(eom_func::Function, t_param::Tuple{Float64, Float64, Int64}, r::Vector{Float64})
 
-## Returns
-    (xpoints, ypoints): Arrays containing the IVP solution of the EOM
-
-"
-function RK4(eom_func::Function, time_param::Tuple{Float64, Float64, Int64}, r::Array)
-    
-    #initializing time parameters
-    (t_initial, t_final, Npoints) = time_param
+    # Initialize time array
+    (t_initial, t_final, Npoints) = t_param
     h = abs(t_final - t_initial) / Npoints
     tpoints = range(t_initial, t_final, Npoints)
 
-    #initializing dynamics array 
-    xpoints = zeros(Npoints)
-    ypoints = zeros(Npoints)
+    # Initialize trajectory array
+    rpoints = zeros(length(r), Npoints)
 
-
-    #runge kutta algorithm
+    # Runge-Kutta algorithm
     for (i, t) in enumerate(tpoints)
-        xpoints[i] = r[1]
-        ypoints[i] = r[2]
+        rpoints[:, i] = r
         k1 = h*eom_func(r, t)
         k2 = h*eom_func(r .+ (0.5 .* k1), t + 0.5*h)
         k3 = h*eom_func(r .+ (0.5 .* k2), t + 0.5*h)
         k4 = h*eom_func(r .+ k3, t + h)
         r = r .+ (k1 + 2 .* k2 + 2 .* k3 + k4) / 6
     end
-    return tpoints, xpoints, ypoints
+    return tpoints, rpoints
 end
 
 
-"
+"""
 module_initializer()
 
 # Descrition
     Prints Hello World!
-"
+"""
 function module_initializer()
     println("Hello World")
 end
@@ -125,19 +115,41 @@ end
 
 
 
-
+# --------------------------------------------------
+#  Chaos_checking
+# --------------------------------------------------
 module Chaos_checking
-
 using FFTW
 
-#spectral entropy
-"spectral_entropy(observable)
+
+"""
+    spectral_entropy(observable)
 
 # Description
 Calculates the spectral entropy of a single observable. Note that the function has a dependency on the FFTW package
 as it uses the fft function to do a fast fourier transform.
-"
-function spectral_entropy(observable::Array)
+"""
+function spectral_entropy(x, cutoff::Float64 = 1e-10)
+    fourier_x = fftshift(fft(x))
+    power_spectrum = abs2.(fourier_x)  # abs2 slightly faster than abs()^2
+    power_spectrum ./= sum(power_spectrum)  # normalization
+
+    spectral = filter(x -> x > cutoff, power_spectrum)  # remove items below cutoff
+    spectral .*= log2.(spectral)
+    spectral /= -1 * log2(length(power_spectrum))
+
+    return sum(spectral)
+end
+
+
+"""
+spectral_entropy(observable)
+
+# Description
+Calculates the spectral entropy of a single observable. Note that the function has a dependency on the FFTW package
+as it uses the fft function to do a fast fourier transform.
+"""
+function spectral_entropy_old(observable::Array)
     fourier_observable = fftshift(fft(observable))
     power_spectrum = abs.(fourier_observable).^2 
     normalized_power = power_spectrum./ sum(power_spectrum)
@@ -156,11 +168,7 @@ function spectral_entropy(observable::Array)
 end
 
 
-
-
-
-#Stroboscopic dynamics of observable
-"
+"""
 stroboscope_dynamics(observables, T_array, timestep)
 
 # Description
@@ -176,8 +184,8 @@ Constructs the stroboscopic dynamics of a given set of observables, `observables
 
 ## Returns 
     x_strobe, v_strobe (Vector): stroboscopic dynamics of xpoints and vpoints
-"
-function stroboscope_dynamics(xpoints::Array, vpoints::Array, time_param::Tuple{Float64, Float64, Int64})
+"""
+function stroboscope_dynamics(xpoints, vpoints, time_param::Tuple{Float64, Float64, Int64})
     (t_initial, t_final, Nsteps) = time_param
     timestep = abs(t_final - t_initial) / Nsteps
     T_array = range(t_initial, t_final, Nsteps)
@@ -200,9 +208,9 @@ end
 
 
 
-
-
-#moduel for constructing and saving phase diagrams
+# --------------------------------------------------
+#  Phase_diagram
+# --------------------------------------------------
 module Phase_diagram
 using DelimitedFiles
 using FFTW
@@ -210,7 +218,7 @@ using ..Spin_compass
 using ..Chaos_checking
 
 
-"
+"""
 lambda_entropy_linear_scan(time_param, scan_param)
 
 # Description
@@ -226,7 +234,7 @@ spectral entropy at each value of lambda.
 
 ## Returns
     spec_entropy_array (Array): spectral entropy as a function of lambda for the given range set by `scan_param`
-"
+"""
 function lambda_entropy_linear_scan(time_param::Tuple{Float64, Float64, Int64}, scan_param::Tuple{Float64, Float64, Int64})
     #initializing constants
     (lambda_initial, lambda_final, resolution) = scan_param
@@ -243,7 +251,8 @@ function lambda_entropy_linear_scan(time_param::Tuple{Float64, Float64, Int64}, 
         r = [x0, v0]
         f(r, t) = Spin_compass.EOM_compass_unitless(r, t, λ)
 
-        (tpoints, xpoints, vpoints) = Spin_compass.RK4(f, time_param, r)
+        (tpoints, rpoints) = Spin_compass.RK4(f, time_param, r)
+        xpoints = rpoints[1, :]
 
         #bounding phi
         cartesian_proj_x = cos.(xpoints)
@@ -266,11 +275,7 @@ function lambda_entropy_linear_scan(time_param::Tuple{Float64, Float64, Int64}, 
 end
 
 
-
-
-
-
-"
+"""
 lambda_linear_scan_saver(time_param, scan_param, save_filename)
 
 # Description
@@ -289,20 +294,14 @@ the function uses the function `writedlm()` under the package `DelimitedFiles`.
 ## Returns
     A txt file containing the spectral entropy array for the given range of lambda set by `scan_param`
 
-"
+"""
 function lambda_linear_scan_saver(time_param::Tuple{Float64, Float64, Int64}, scan_param::Tuple{Float64, Float64, Int64}, save_filename::String)
     spec_entropy_array = Phase_diagram.lambda_entropy_linear_scan(time_param, scan_param)
     writedlm(save_filename, spec_entropy_array)
 end
 
 
-
-
-
-
-
-#function for constructing the normalized power as a function of lambda
-"
+"""
 normalized_power_linear_scan(time_param, scan_param)
 
 # Description
@@ -320,30 +319,29 @@ of the spin compass as a function of lambda.
     freq_spectrum (Array): angular frequency axis of the power spectrum
     normalized_power_fullarray (Array): 2x2 matrix of the normalized power spectrum as a function of lambda
 
-"
+"""
 function normalized_power_linear_scan(time_param::Tuple{Float64, Float64, Int64}, scan_param::Tuple{Float64, Float64, Int64})
+    x0, v0 = 1.0, 0.0
+    r = [x0, v0]
+
     #initializing constants
     (t_initial, t_final, Nsteps) = time_param
     (lambda_initial, lambda_final, resolution) = scan_param
     sampling_rate = Nsteps / abs(t_final - t_initial)
-
-
 
     #scan Arrays
     lambda_sample_array = range(lambda_initial, lambda_final, resolution)
     normalized_power_fullarray = zeros((Nsteps, resolution))
     freq_spectrum = fftshift(fftfreq(Nsteps, sampling_rate)) * 2π
 
-
     println("Scan starting...")
     for i in 1:resolution
         #initializing dynamics inputs
         λ = lambda_sample_array[i]
-        x0, v0 = 1.0, 0.0
-        r = [x0, v0]
         f(r, t) = Spin_compass.EOM_compass_unitless(r, t, λ)
 
-        (tpoints, xpoints, vpoints) = Spin_compass.RK4(f, time_param, r)
+        (tpoints, rpoints) = Spin_compass.RK4(f, time_param, r)
+        xpoints = rpoints[1, :]
 
         #calculating the frequency spectrum
         #bounding phi
@@ -352,11 +350,8 @@ function normalized_power_linear_scan(time_param::Tuple{Float64, Float64, Int64}
         xpoints = atan.(cartesian_proj_y, cartesian_proj_x) # we do this to force phi to be periodic around -pi and pi
 
         fourier_xpoints = fftshift(fft(xpoints))
-        power_spectrum = abs.(fourier_xpoints).^2
-        normalized_power = power_spectrum./ sum(power_spectrum)
-
-        normalized_power_fullarray[:, i] = normalized_power
-
+        power_spectrum = abs2.(fourier_xpoints)
+        normalized_power_fullarray[:, i] = power_spectrum ./ sum(power_spectrum)
 
         #for code progress tracking
         if i % 10 == 0
@@ -372,10 +367,7 @@ function normalized_power_linear_scan(time_param::Tuple{Float64, Float64, Int64}
 end
 
 
-
-
-
-"
+"""
 normalized_power_scan_saver(time_param, scan_param, freq_filename, normalized_power_filename)
 
 # Description
@@ -396,7 +388,7 @@ the function uses the function `writedlm()` under the package `DelimitedFiles`.
 ## Returns
     A txt file containing the power spectrum array for the given range of lambda set by `scan_param`
 
-"
+"""
 function normalized_power_scan_saver(time_param::Tuple{Float64, Float64, Int64}, scan_param::Tuple{Float64, Float64, Int64}, freq_spectrum_filename::String, normalized_power_filename::String)
     freq_spectrum, normalized_power = normalized_power_linear_scan(time_param, scan_param)
     writedlm(freq_spectrum_filename, freq_spectrum)
@@ -404,12 +396,7 @@ function normalized_power_scan_saver(time_param::Tuple{Float64, Float64, Int64},
 end
 
 
-
-
-
-
-
-"
+"""
 b_omega_spectral_diagram_scanner(time_param, scan_param)
 
 # Description
@@ -423,7 +410,7 @@ dynamics as a function of both B and ω for a given range set by the `scan_param
 
 ## Returns
     spectral_entropy_diagram (Array): 2D array containing the spectral entropy as a function of B and ω
-"
+"""
 function b_omega_spectral_diagram_scanner(scan_param::Tuple{Float64, Float64, Float64, Float64, Int64})
     (B_initial, B_final, omega_initial, omega_final, resolution) = scan_param
 
@@ -432,34 +419,33 @@ function b_omega_spectral_diagram_scanner(scan_param::Tuple{Float64, Float64, Fl
     driving_freq_array = range(omega_initial, omega_final, resolution)
     spectral_entropy_diagram = zeros((resolution, resolution))
 
+    #initial states
+    x0, v0 = 1.0, 0.0
+    r = [x0, v0]
+
+    timestep = 0.01
 
     println("Scan starting...")
     for j in 1:resolution
+
+        ω = driving_freq_array[j]
+        t_initial, t_final = 0.0, 100 * 2π / ω
+        Nsteps = Int64(floor(abs(t_final - t_initial) / timestep))
+        time_param = (t_initial, t_final, Nsteps)
+
         for i in 1:resolution
-            #initial states
-            x0, v0 = 1.0, 0.0
-            r = [x0, v0]
-            
             B = magnetic_field_amp_array[i]
-            ω = driving_freq_array[j]
-
-            timestep = 0.01
-            t_initial, t_final = 0.0, 100 * 2π / ω
-            Nsteps = Int64(floor(abs(t_final - t_initial) / timestep))
-            time_param = (t_initial, t_final, Nsteps)
-
             f(r, t) = Spin_compass.EOM_compass(r, t, B, ω)
 
-            (tpoints, xpoints, vpoints) = Spin_compass.RK4(f, time_param, r)
+            (tpoints, rpoints) = Spin_compass.RK4(f, time_param, r)
+            xpoints = rpoints[1, :]
 
             #bounding phi
             cartesian_proj_x = cos.(xpoints)
             cartesian_proj_y = sin.(xpoints)
             xpoints = atan.(cartesian_proj_y, cartesian_proj_x) # we do this to force phi to be periodic around -pi and pi
 
-            entropy = Chaos_checking.spectral_entropy(xpoints)
-            
-            spectral_entropy_diagram[i, j] = entropy
+            spectral_entropy_diagram[i, j] = Chaos_checking.spectral_entropy(xpoints)
         end
         if j % 10 == 0
             println("Number of Columns Done: ", j)
@@ -473,10 +459,7 @@ function b_omega_spectral_diagram_scanner(scan_param::Tuple{Float64, Float64, Fl
 end
 
 
-
-
-
-"
+"""
 b_omega_spectral_diagram_scan_saver()
 # Description
 Generates and saves the matrix containing the spectral entropy information as a function of B and ω information
@@ -493,7 +476,7 @@ a txt file.
 ## Returns
     A txt file containing the spectral entropy diagram as a function of B and ω for the given range set by scan_param.
 
-"
+"""
 function b_omega_spectral_diagram_scan_saver(scan_param::Tuple{Float64, Float64, Float64, Float64, Int64}, save_filename::String)
     spectral_entropy_diagram = Phase_diagram.b_omega_spectral_diagram_scanner(scan_param)
     writedlm(save_filename, spectral_entropy_diagram)

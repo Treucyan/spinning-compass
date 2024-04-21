@@ -70,11 +70,7 @@ Solve systems of first-order ordinary differential equations using the fourth-or
 - r (Array): initial state of the system. r must follow the same ordering of variables used in `eom_func`.
 
 # Returns
-- (tpoints, rpoints): Arrays containing the IVP solution of the EOM
-
-# Notes
-- Each row in rpoints contains the values of a particular dependent variable. To extract these values, one can either do
-`xpoints = rpoints[1, :], ypoints = rpoints[2, :], ...` or `xpoints, ypoints, ... = eachrow(rpoints).`
+- (tpoints, xpoints, vpoints): Arrays containing the IVP solution of the EOM
 """
 function RK4(eom_func::Function, t_param::Tuple{Float64, Float64, Int64}, r::Vector{Float64})
 
@@ -84,18 +80,20 @@ function RK4(eom_func::Function, t_param::Tuple{Float64, Float64, Int64}, r::Vec
     tpoints = range(t_initial, t_final, Npoints)
 
     # Initialize trajectory array
-    rpoints = zeros(length(r), Npoints)
+    xpoints = zeros(Npoints)
+    ypoints = zeros(Npoints)
 
     # Runge-Kutta algorithm
     for (i, t) in enumerate(tpoints)
-        rpoints[:, i] = r
+        xpoints[i] = r[1]
+        ypoints[i] = r[2]
         k1 = h*eom_func(r, t)
         k2 = h*eom_func(r .+ (0.5 .* k1), t + 0.5*h)
         k3 = h*eom_func(r .+ (0.5 .* k2), t + 0.5*h)
         k4 = h*eom_func(r .+ k3, t + h)
         r = r .+ (k1 + 2 .* k2 + 2 .* k3 + k4) / 6
     end
-    return tpoints, rpoints
+    return tpoints, xpoints, ypoints
 end
 
 
@@ -251,8 +249,7 @@ function lambda_entropy_linear_scan(time_param::Tuple{Float64, Float64, Int64}, 
         r = [x0, v0]
         f(r, t) = Spin_compass.EOM_compass_unitless(r, t, λ)
 
-        (tpoints, rpoints) = Spin_compass.RK4(f, time_param, r)
-        xpoints = rpoints[1, :]
+        (tpoints, xpoints, vpoints) = Spin_compass.RK4(f, time_param, r)
 
         #bounding phi
         cartesian_proj_x = cos.(xpoints)
@@ -340,8 +337,7 @@ function normalized_power_linear_scan(time_param::Tuple{Float64, Float64, Int64}
         λ = lambda_sample_array[i]
         f(r, t) = Spin_compass.EOM_compass_unitless(r, t, λ)
 
-        (tpoints, rpoints) = Spin_compass.RK4(f, time_param, r)
-        xpoints = rpoints[1, :]
+        (tpoints, xpoints, vpoints) = Spin_compass.RK4(f, time_param, r)
 
         #calculating the frequency spectrum
         #bounding phi
@@ -437,8 +433,7 @@ function b_omega_spectral_diagram_scanner(scan_param::Tuple{Float64, Float64, Fl
             B = magnetic_field_amp_array[i]
             f(r, t) = Spin_compass.EOM_compass(r, t, B, ω)
 
-            (tpoints, rpoints) = Spin_compass.RK4(f, time_param, r)
-            xpoints = rpoints[1, :]
+            (tpoints, xpoints, vpoints) = Spin_compass.RK4(f, time_param, r)
 
             #bounding phi
             cartesian_proj_x = cos.(xpoints)

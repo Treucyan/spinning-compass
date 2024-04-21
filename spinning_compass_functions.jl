@@ -127,7 +127,7 @@ using FFTW
 Calculates the spectral entropy of a single observable. Note that the function has a dependency on the FFTW package
 as it uses the fft function to do a fast fourier transform.
 """
-function spectral_entropy(x, cutoff::Float64 = 1e-10)
+function spectral_entropy(x::Vector{Float64}, cutoff::Float64 = 1e-10)
     fourier_x = fftshift(fft(x))
     power_spectrum = abs2.(fourier_x)  # abs2 slightly faster than abs()^2
     power_spectrum ./= sum(power_spectrum)  # normalization
@@ -183,7 +183,7 @@ Constructs the stroboscopic dynamics of a given set of observables, `observables
 ## Returns 
     x_strobe, v_strobe (Vector): stroboscopic dynamics of xpoints and vpoints
 """
-function stroboscope_dynamics(xpoints, vpoints, time_param::Tuple{Float64, Float64, Int64})
+function stroboscope_dynamics(xpoints::Vector{Float64}, vpoints::Vector{Float64}, time_param::Tuple{Float64, Float64, Int64})
     (t_initial, t_final, Nsteps) = time_param
     timestep = abs(t_final - t_initial) / Nsteps
     T_array = range(t_initial, t_final, Nsteps)

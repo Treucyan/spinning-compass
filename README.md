@@ -11,9 +11,7 @@ The functions in `spin_compass_functions.jl`, `RK4.ipynb`, and `215_Mini_problem
 Make sure the following packages are accessible to avoid any errors in the code.
 
 
-## Files and Folders Description
-
-### Main Directory
+## Main Files Description
 #### `spinning_compass_functions.jl` 
 
 This jl file contains all the functions to simulate and detect chaos in the dynamics of a spinning compass under a periodically modulated magnetic field. It has three modules, which are listed below:
@@ -36,7 +34,7 @@ This is a sandbox notebook, where we explored our functions in greater detail. I
 This is a notebook that uses `matplotlib.pyplot` package to generate the heatmaps seen in `215_Mini_Problem_Guinto_Jara_Macatangay_Oidem.ipynb`. It only serves as a comparison to the heatmaps generated in Julia's `Plots` package.
 
 
-### Supplementary Folders
+## Supplementary Folders
 #### explorations Folder
 This folder contains two additional notebooks where we attempted to optimize the functions in `spinning_compass_functions.jl`. In particular:
 

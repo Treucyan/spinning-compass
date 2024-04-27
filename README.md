@@ -32,15 +32,15 @@ Make sure the following packages are accessible to avoid any errors in the code.
 - `Heatmap_plots.ipynb` is a notebook that uses `matplotlib.pyplot` package to generate the heatmaps seen in `215_Mini_Problem_Guinto_Jara_Macatangay_Oidem.ipynb`. It only serves as a comparison to the heatmaps generated in Julia's `Plots` package.
 
 
-#### explorations Folder
+### explorations Folder
 This folder contains two additional notebooks where we attempted to optimize the functions in `spinning_compass_functions.jl`. In particular:
 
 - a generalization of the RK4 algorithm can be found in the `general RK4.ipynb` notebook; while,
 
 - an attempt to optimize the spectral entropy function through broadcasting can be seen in `spectralentropy.ipynb`.
 
-#### image_results Folder
+### image_results Folder
 This folder contains some of the key results of our simulations, including some exemplary dynamics of the spinning compass, and their respective Poincare map, and the system's phase diagrams.
 
-#### raw_data Folder
+### raw_data Folder
 This folder is a collection of all the raw data generated to construct the phase diagrams of the spinning compass. They can be accessed as a Txt file using the `readdlm` function of the `DelimitedFiles` package.

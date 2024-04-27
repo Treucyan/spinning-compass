@@ -126,6 +126,12 @@ using FFTW
 # Description
 Calculates the spectral entropy of a single observable. Note that the function has a dependency on the FFTW package
 as it uses the fft function to do a fast fourier transform.
+
+# Args
+- observable (Vector{Float64}): time series of the observable considered
+
+# Returns
+- sum(spectral): normalized spectral entropy of the time series
 """
 function spectral_entropy(x::Vector{Float64}, cutoff::Float64 = 1e-10)
     fourier_x = fftshift(fft(x))
@@ -141,11 +147,18 @@ end
 
 
 """
-spectral_entropy(observable)
+spectral_entropy_old(observable)
 
 # Description
 Calculates the spectral entropy of a single observable. Note that the function has a dependency on the FFTW package
-as it uses the fft function to do a fast fourier transform.
+as it uses the fft function to do a fast fourier transform. It is also a naive implementation of the spectral entropy
+calculator, which uses the `abs` function (instead of `abs2`), and for-loops (instead of broadcasting).
+    
+# Args
+- observable (Vector{Float64}): time series of the observable considered
+
+# Returns
+- H_spectral: normalized spectral entropy of the time series
 """
 function spectral_entropy_old(observable::Array)
     fourier_observable = fftshift(fft(observable))

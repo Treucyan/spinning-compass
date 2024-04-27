@@ -23,7 +23,8 @@ This jl file contains all the functions to simulate and detect chaos in the dyna
   - The `Phase_diagram` module contains all the functions that are dedicated to constructing the phase diagram and linear scans of the spinning compass for a given set of control parameters.  
 
 
-- `215_Mini_Problem_Guinto_Jara_Macatangay_Oidem.ipynb` is a compilation of all our benchmarking and simulation results, all organized according to the key results in the proposal. This serves as the main notebook for reporting our progress in the mini-project.
+#### `215_Mini_Problem_Guinto_Jara_Macatangay_Oidem.ipynb` 
+This is a compilation of all our benchmarking and simulation results, all organized according to the key results in the proposal. This serves as the main notebook for reporting our progress in the mini-project.
 
 
 #### `RK4.ipynb` 

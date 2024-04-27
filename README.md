@@ -1,4 +1,12 @@
-# Chaos Detection in Spin Compass
+# Chaos Detection in Periodically-Driven Spinning Compass
+## Contibutors:
+- GUINTO, Mikael Gian
+- JARA, Roy Jr.
+- MACATANGAY, David Marick
+- OIDEM, James Marwin ``JM”
+
+
+
 
 ## Required Packages
 The functions in `spin_compass_functions.jl`, `RK4.ipynb`, and `215_Mini_problem...` notebook rely on the following packages:

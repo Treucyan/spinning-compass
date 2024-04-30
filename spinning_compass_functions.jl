@@ -11,19 +11,19 @@
 module Spin_compass
 
 """
-EOM_compass(r, t, B, ω)
+    EOM_compass(r, t, B, ω)
 
 # Description
 Equations of motion for a spinning compass in a periodically changing magnetic field
 
 # Args
-    r (Array): Array containing the compass' state at time t. `r` must have the form: `r = [x, v]`
-    t (Float64): time t.
-    B (Float64): non-dimensional magnetic field amplitude
-    ω (Float64): non-dimensional driving frequency
+- `r` (Array): Array containing the compass' state at time t. `r` must have the form: `r = [x, v]`
+- `t` (Float64): time t.
+- `B` (Float64): non-dimensional magnetic field amplitude
+- `ω` (Float64): non-dimensional driving frequency
 
 # Returns
-    [dxdt, dvdt] (Array): system's velocity state at t.
+- `[dxdt, dvdt]` (Array): system's velocity state at t.
 """
 function EOM_compass(r::Array, t::Float64, B::Float64, ω::Float64)
     (x, v) = r
@@ -34,20 +34,20 @@ end
 
 
 """
-EOM_compass_unitless(r, t, λ)
+    EOM_compass_unitless(r, t, λ)
 
 # Description 
 Unitless equations of motions of the periodically-driven spinning compass. 
 
-The time variable is expressed in terms of the driving period `T = ωt``. For the simulation time to be commensurate with the driving period, set T_f = `2πn`
+The time variable is expressed in terms of the driving period `T = ωt`. For the simulation time to be commensurate with the driving period, set T_f = `2πn`
 
 # Args
-    r (Array): Array containing the compass' state at time t. `r` must have the form: `r = [x, v]`
-    t (Float64): time t
-    λ (Float64): unitless amplitude
+- `r` (Array): Array containing the compass' state at time t. `r` must have the form: `r = [x, v]`
+- `t` (Float64): time t
+- `λ` (Float64): unitless amplitude
 
 # Returns
-    [dxdt, dvdt] (Array): system's velocity state at t.
+- `[dxdt, dvdt]` (Array): system's velocity state at t.
 """
 function EOM_compass_unitless(r::Array, t::Float64, λ::Float64)
     (x, v) = r
@@ -63,14 +63,12 @@ end
 Solve systems of first-order ordinary differential equations using the fourth-order Runge-Kutta method.
 
 # Args
-- eom_func (Function): function corresponding to the equations of motion to be integrated. The function must follow the format: `eom_func(r, t)`.
-
-- time_param (Tuple): initial and final time, and number of steps of the integration. `time_param` must follow the format: `time_param = [t_initial, t_final, Npoints]`
-
-- r (Array): initial state of the system. r must follow the same ordering of variables used in `eom_func`.
+- `eom_func` (Function): function corresponding to the equations of motion to be integrated. The function must follow the format: `eom_func(r, t)`.
+- `time_param` (Tuple): initial and final time, and number of steps of the integration. `time_param` must follow the format: `time_param = [t_initial, t_final, Npoints]`
+- `r` (Array): initial state of the system. r must follow the same ordering of variables used in `eom_func`.
 
 # Returns
-- (tpoints, xpoints, vpoints): Arrays containing the IVP solution of the EOM
+- `(tpoints, xpoints, vpoints)`: Arrays containing the IVP solution of the EOM
 """
 function RK4(eom_func::Function, t_param::Tuple{Float64, Float64, Int64}, r::Vector{Float64})
 
@@ -128,10 +126,10 @@ Calculates the spectral entropy of a single observable. Note that the function h
 as it uses the fft function to do a fast fourier transform.
 
 # Args
-- observable (Vector{Float64}): time series of the observable considered
+- `observable` (Vector{Float64}): time series of the observable considered
 
 # Returns
-- sum(spectral): normalized spectral entropy of the time series
+- `sum` (spectral): normalized spectral entropy of the time series
 """
 function spectral_entropy(x::Vector{Float64}, cutoff::Float64 = 1e-10)
     fourier_x = fftshift(fft(x))
@@ -147,7 +145,7 @@ end
 
 
 """
-spectral_entropy_old(observable)
+    `spectral_entropy_old(observable)`
 
 # Description
 Calculates the spectral entropy of a single observable. Note that the function has a dependency on the FFTW package
@@ -155,10 +153,10 @@ as it uses the fft function to do a fast fourier transform. It is also a naive i
 calculator, which uses the `abs` function (instead of `abs2`), and for-loops (instead of broadcasting).
     
 # Args
-- observable (Vector{Float64}): time series of the observable considered
+- `observable` (Vector{Float64}): time series of the observable considered
 
 # Returns
-- H_spectral: normalized spectral entropy of the time series
+- `H_spectral`: normalized spectral entropy of the time series
 """
 function spectral_entropy_old(observable::Array)
     fourier_observable = fftshift(fft(observable))
@@ -180,21 +178,18 @@ end
 
 
 """
-stroboscope_dynamics(observables, T_array, timestep)
+    `stroboscope_dynamics(observables, T_array, timestep)`
 
 # Description
 Constructs the stroboscopic dynamics of a given set of observables, `observables = (xpoints, vpoints)`.
 
 ## Args
-    xpoints (Array): full dynamics of the position variable
-    
-    vpoints (Array): full dynamics of the velocity variable
-
-    time_param (Tuple): time parameters for constructing the time array. Use the following
-        format: time_param = [t_initial, t_final, Nsteps]
+- `xpoints` (Array): full dynamics of the position variable
+- `vpoints` (Array): full dynamics of the velocity variable
+- `time_param` (Tuple): time parameters for constructing the time array. Use the following format: `time_param = [t_initial, t_final, Nsteps]`
 
 ## Returns 
-    x_strobe, v_strobe (Vector): stroboscopic dynamics of xpoints and vpoints
+- `x_strobe, v_strobe` (Vector): stroboscopic dynamics of xpoints and vpoints
 """
 function stroboscope_dynamics(xpoints::Vector{Float64}, vpoints::Vector{Float64}, time_param::Tuple{Float64, Float64, Int64})
     (t_initial, t_final, Nsteps) = time_param
@@ -230,21 +225,18 @@ using ..Chaos_checking
 
 
 """
-lambda_entropy_linear_scan(time_param, scan_param)
+    `lambda_entropy_linear_scan(time_param, scan_param)`
 
 # Description
 Generates a linear scan of lambda for the unitless spin compass, calculating the 
 spectral entropy at each value of lambda.
 
 ## Args
-    time_param (Tuple{Float64, Float64, Int64}): initial and final time, and number of steps of the integration. 
-        `time_param` must follow the format: `time_param = [t_initial, t_final, Npoints]`
-
-    scan_param (Tuple{Float64, Float64, Int64}): range of lambda to be considered and the resolution of the scan.
-        `scan_param` must follow the format: 'scan_param = [lambda_initial, lambda_final, resolution]'
+- `time_param` (Tuple{Float64, Float64, Int64}): initial and final time, and number of steps of the integration. `time_param` must follow the format: `time_param = [t_initial, t_final, Npoints]`
+- `scan_param` (Tuple{Float64, Float64, Int64}): range of lambda to be considered and the resolution of the scan. `scan_param` must follow the format: `scan_param = [lambda_initial, lambda_final, resolution]`
 
 ## Returns
-    spec_entropy_array (Array): spectral entropy as a function of lambda for the given range set by `scan_param`
+- `spec_entropy_array` (Array): spectral entropy as a function of lambda for the given range set by `scan_param`
 """
 function lambda_entropy_linear_scan(time_param::Tuple{Float64, Float64, Int64}, scan_param::Tuple{Float64, Float64, Int64})
     #initializing constants
@@ -286,24 +278,19 @@ end
 
 
 """
-lambda_linear_scan_saver(time_param, scan_param, save_filename)
+    `lambda_linear_scan_saver(time_param, scan_param, save_filename)`
 
 # Description
 Generates and saves the spectral entropy array generated from the linear scan of lambda into a txt file. Note that
 the function uses the function `writedlm()` under the package `DelimitedFiles`.
 
 ## Args
-    time_param (Tuple{Float64, Float64, Int64}): initial and final time, and number of steps of the integration. 
-        `time_param` must follow the format: `time_param = [t_initial, t_final, Npoints]`
-
-    scan_param (Tuple{Float64, Float64, Int64}): range of lambda to be considered and the resolution of the scan.
-        `scan_param` must follow the format: 'scan_param = [lambda_initial, lambda_final, resolution]'
-
-    save_filename (String): filename of the txt where the spectral entroy array will be saved
+- `time_param` (Tuple{Float64, Float64, Int64}): initial and final time, and number of steps of the integration. `time_param` must follow the format: `time_param = [t_initial, t_final, Npoints]`
+- `scan_param` (Tuple{Float64, Float64, Int64}): range of lambda to be considered and the resolution of the scan. `scan_param` must follow the format: `scan_param = [lambda_initial, lambda_final, resolution]`
+- `save_filename` (String): filename of the txt where the spectral entroy array will be saved
 
 ## Returns
-    A txt file containing the spectral entropy array for the given range of lambda set by `scan_param`
-
+- A txt file containing the spectral entropy array for the given range of lambda set by `scan_param`
 """
 function lambda_linear_scan_saver(time_param::Tuple{Float64, Float64, Int64}, scan_param::Tuple{Float64, Float64, Int64}, save_filename::String)
     spec_entropy_array = Phase_diagram.lambda_entropy_linear_scan(time_param, scan_param)
@@ -312,22 +299,19 @@ end
 
 
 """
-normalized_power_linear_scan(time_param, scan_param)
+    `normalized_power_linear_scan(time_param, scan_param)``
 
 # Description
 Generates a linear scan of lambda to obtain the behavior of the normalized power spectrum
 of the spin compass as a function of lambda.
 
 ## Args
-    time_param (Tuple{Float64, Float64, Int64}): initial and final time, and number of steps of the integration. 
-        `time_param` must follow the format: `time_param = [t_initial, t_final, Npoints]`
-
-    scan_param (Tuple{Float64, Float64, Int64}): range of lambda to be considered and the resolution of the scan.
-        `scan_param` must follow the format: 'scan_param = [lambda_initial, lambda_final, resolution]'
+- `time_param` (Tuple{Float64, Float64, Int64}): initial and final time, and number of steps of the integration. `time_param` must follow the format: `time_param = [t_initial, t_final, Npoints]`
+- `scan_param` (Tuple{Float64, Float64, Int64}): range of lambda to be considered and the resolution of the scan. `scan_param` must follow the format: `scan_param = [lambda_initial, lambda_final, resolution]`
 
 ## Returns
-    freq_spectrum (Array): angular frequency axis of the power spectrum
-    normalized_power_fullarray (Array): 2x2 matrix of the normalized power spectrum as a function of lambda
+- `freq_spectrum` (Array): angular frequency axis of the power spectrum
+- `normalized_power_fullarray` (Array): 2x2 matrix of the normalized power spectrum as a function of lambda
 
 """
 function normalized_power_linear_scan(time_param::Tuple{Float64, Float64, Int64}, scan_param::Tuple{Float64, Float64, Int64})
@@ -377,26 +361,19 @@ end
 
 
 """
-normalized_power_scan_saver(time_param, scan_param, freq_filename, normalized_power_filename)
+    `normalized_power_scan_saver(time_param, scan_param, freq_filename, normalized_power_filename)`
 
 # Description
-Generates and saves the normalized power spectrum array generated from the linear scan of lambda into a txt file. Note that
-the function uses the function `writedlm()` under the package `DelimitedFiles`.
+Generates and saves the normalized power spectrum array generated from the linear scan of lambda into a txt file. Note that the function uses the function `writedlm()` under the package `DelimitedFiles`.
 
 ## Args
-    time_param (Tuple{Float64, Float64, Int64}): initial and final time, and number of steps of the integration. 
-        `time_param` must follow the format: `time_param = [t_initial, t_final, Npoints]`   
-
-    scan_param (Tuple{Float64, Float64, Int64}): range of lambda to be considered and the resolution of the scan.
-        `scan_param` must follow the format: 'scan_param = [lambda_initial, lambda_final, resolution]'
-
-    freq_filename (String): filename of the txt file where the frequency spectrum array will be saved
-
-    normalized_power_filename (String): filename of the txt file where the power spectrum array will be saved
+- `time_param` (Tuple{Float64, Float64, Int64}): initial and final time, and number of steps of the integration. `time_param` must follow the format: `time_param = [t_initial, t_final, Npoints]`   
+- `scan_param` (Tuple{Float64, Float64, Int64}): range of lambda to be considered and the resolution of the scan. `scan_param` must follow the format: `scan_param = [lambda_initial, lambda_final, resolution]`
+- `freq_filename` (String): filename of the txt file where the frequency spectrum array will be saved
+- `normalized_power_filename` (String): filename of the txt file where the power spectrum array will be saved
 
 ## Returns
-    A txt file containing the power spectrum array for the given range of lambda set by `scan_param`
-
+- A txt file containing the power spectrum array for the given range of lambda set by `scan_param`
 """
 function normalized_power_scan_saver(time_param::Tuple{Float64, Float64, Int64}, scan_param::Tuple{Float64, Float64, Int64}, freq_spectrum_filename::String, normalized_power_filename::String)
     freq_spectrum, normalized_power = normalized_power_linear_scan(time_param, scan_param)
@@ -406,19 +383,17 @@ end
 
 
 """
-b_omega_spectral_diagram_scanner(time_param, scan_param)
+    `b_omega_spectral_diagram_scanner(time_param, scan_param)`
 
 # Description
-Generates a 2D array with size (resolution , resolution) containing the spectral entropy of the spin compass' 
+Generates a 2D array with size (resolution , resolution) containing the spectral entropy of the spin-compass
 dynamics as a function of both B and ω for a given range set by the `scan_param` input.
 
 ## Args
-    scan_param (Tuple{Float64, Float64, Float64, Float64, Int64}): range of lambda to be considered and the resolution of 
-        the scan. `scan_param` must follow the format: 
-        'scan_param = [B_initial, B_final, omega_initial, omega_final, resolution]'
+- `scan_param` (Tuple{Float64, Float64, Float64, Float64, Int64}): range of lambda to be considered and the resolution of the scan. `scan_param` must follow the format: `scan_param = [B_initial, B_final, omega_initial, omega_final, resolution]`
 
 ## Returns
-    spectral_entropy_diagram (Array): 2D array containing the spectral entropy as a function of B and ω
+- `spectral_entropy_diagram` (Array): 2D array containing the spectral entropy as a function of B and ω
 """
 function b_omega_spectral_diagram_scanner(scan_param::Tuple{Float64, Float64, Float64, Float64, Int64})
     (B_initial, B_final, omega_initial, omega_final, resolution) = scan_param
@@ -468,22 +443,18 @@ end
 
 
 """
-b_omega_spectral_diagram_scan_saver()
+    `b_omega_spectral_diagram_scan_saver()`
+
 # Description
 Generates and saves the matrix containing the spectral entropy information as a function of B and ω information
 a txt file.
 
 ## Args
-    scan_param (Tuple{Float64, Float64, Float64, Float64, Int64}): range of lambda to be considered and the resolution of 
-        the scan. `scan_param` must follow the format: 
-        'scan_param = [B_initial, B_final, omega_initial, omega_final, resolution]'
-
-    save_filename (String): filename of the txt file where the spectral entropy diagram will be saved
-
+- `scan_param` (Tuple{Float64, Float64, Float64, Float64, Int64}): range of lambda to be considered and the resolution of the scan. `scan_param` must follow the format: `scan_param = [B_initial, B_final, omega_initial, omega_final, resolution]`
+- `save_filename` (String): filename of the txt file where the spectral entropy diagram will be saved
 
 ## Returns
-    A txt file containing the spectral entropy diagram as a function of B and ω for the given range set by scan_param.
-
+- A txt file containing the spectral entropy diagram as a function of B and ω for the given range set by scan_param.
 """
 function b_omega_spectral_diagram_scan_saver(scan_param::Tuple{Float64, Float64, Float64, Float64, Int64}, save_filename::String)
     spectral_entropy_diagram = Phase_diagram.b_omega_spectral_diagram_scanner(scan_param)
